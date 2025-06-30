@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>First-Time Home Buyer Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals -->
+    <!-- Application Structure Plan: A tab-based, single-page application with three main sections: "1. Budget & Savings", "2. Home Comparison", and "3. Closing Checklist". This structure mirrors the user's journey from financial planning to the final purchase, providing a logical and linear workflow. Users can navigate between these sections using a top navigation bar. Key interactions include real-time budget calculations, dynamic chart updates, adding/removing properties from a comparison table, and checking off items on a progress-tracking checklist. This interactive, task-oriented design is more engaging and less intimidating than a static spreadsheet, making the complex process of buying a home feel more manageable. -->
+    <!-- Visualization & Content Choices: 
+        1. Budget & Savings: Report Info -> Income, Expenses, Savings Goals. Goal -> Inform & Plan. Viz -> Donut Chart (Chart.js) showing expense vs. savings breakdown. Interaction -> Real-time updates to chart and summary figures as user enters data into input fields. Justification -> Provides immediate visual feedback on financial health.
+        2. Home Comparison: Report Info -> Property comparison table. Goal -> Compare & Organize. Presentation -> Dynamic HTML table. Interaction -> Users can add properties via a form and remove them with a button click. Justification -> Allows for personalized list-building and easy side-by-side comparison.
+        3. Closing Checklist: Report Info -> Step-by-step closing checklist. Goal -> Organize & Track Progress. Presentation -> Grouped checklist with a main progress bar. Interaction -> Clicking checkboxes updates the overall progress bar. Justification -> Gamifies the process and provides a clear visual indicator of progress.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .nav-link { transition: all 0.3s ease; }
+        .nav-link.active { border-color: #2563eb; color: #2563eb; font-weight: 600; }
+        .section { display: none; }
+        .section.active { display: block; }
+        .progress-bar-fill { transition: width 0.5s ease-in-out; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-900">First-Time Home Buyer Assistant</h1>
+            <p class="text-lg text-gray-600 mt-2">Your interactive guide from budget to closing.</p>
+        </header>
+
+        <nav class="flex justify-center border-b border-gray-200 mb-8">
+            <button data-target="budget" class="nav-link active text-lg py-4 px-6 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-500">1. Budget & Savings</button>
+            <button data-target="search" class="nav-link text-lg py-4 px-6 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-500">2. Home Comparison</button>
+            <button data-target="checklist" class="nav-link text-lg py-4 px-6 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-500">3. Closing Checklist</button>
+        </nav>
+
+        <main>
+            <section id="budget" class="section active">
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-semibold text-gray-800">Budget & Savings Tracker</h2>
+                    <p class="text-gray-600 mt-2">Start by understanding your financial position. Enter your biweekly income and monthly expenses to see your savings potential and how it breaks down.</p>
+                </div>
+
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-md">
+                        <h3 class="text-xl font-semibold mb-4 border-b pb-2">Income & Expenses</h3>
+                        
+                        <div class="grid sm:grid-cols-2 gap-6">
+                            <div>
+                                <h4 class="font-semibold text-lg text-gray-700 mb-3">Biweekly Income</h4>
+                                <div class="space-y-3">
+                                    <label class="block">Net Pay (Buyer 1)<input type="number" id="income1" class="w-full mt-1 p-2 border rounded-md" placeholder="1400"></label>
+                                    <label class="block">Net Pay (Buyer 2)<input type="number" id="income2" class="w-full mt-1 p-2 border rounded-md" placeholder="1400"></label>
+                                    <label class="block">Other Income<input type="number" id="incomeOther" class="w-full mt-1 p-2 border rounded-md" placeholder="0"></label>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-lg text-gray-700 mb-3">Monthly Expenses</h4>
+                                <div class="space-y-3">
+                                    <label class="block">Rent/Current Mortgage<input type="number" class="expense-item w-full mt-1 p-2 border rounded-md" placeholder="1800"></label>
+                                    <label class="block">Loan Payments<input type="number" class="expense-item w-full mt-1 p-2 border rounded-md" placeholder="400"></label>
+                                    <label class="block">Groceries & Dining<input type="number" class="expense-item w-full mt-1 p-2 border rounded-md" placeholder="600"></label>
+                                    <label class="block">Utilities & Subscriptions<input type="number" class="expense-item w-full mt-1 p-2 border rounded-md" placeholder="300"></label>
+                                    <label class="block">Transportation<input type="number" class="expense-item w-full mt-1 p-2 border rounded-md" placeholder="250"></label>
+                                    <label class="block">Other (Entertainment, etc.)<input type="number" class="expense-item w-full mt-1 p-2 border rounded-md" placeholder="400"></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl shadow-md flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-xl font-semibold mb-4 border-b pb-2">Financial Snapshot</h3>
+                            <div class="space-y-3 text-lg">
+                                <div class="flex justify-between"><span>Monthly Income:</span> <span id="totalIncome" class="font-bold text-green-600">$0</span></div>
+                                <div class="flex justify-between"><span>Monthly Expenses:</span> <span id="totalExpenses" class="font-bold text-red-600">$0</span></div>
+                                <hr/>
+                                <div class="flex justify-between font-bold text-xl"><span>Net Savings:</span> <span id="netSavings">$0</span></div>
+                            </div>
+                        </div>
+                        <div class="chart-container relative h-64 w-full max-w-xs mx-auto mt-4">
+                            <canvas id="budgetChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="search" class="section">
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-semibold text-gray-800">Home Search & Comparison</h2>
+                    <p class="text-gray-600 mt-2">Found a few places you like? Add them here to compare key details side-by-side and keep your search organized.</p>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-md mb-8">
+                    <h3 class="text-xl font-semibold mb-4">Add a New Property</h3>
+                    <form id="addPropertyForm" class="grid sm:grid-cols-2 md:grid-cols-4 gap-4">
+                        <input type="text" id="propAddress" placeholder="Address" class="p-2 border rounded-md" required>
+                        <input type="number" id="propPrice" placeholder="Asking Price" class="p-2 border rounded-md" required>
+                        <input type="number" id="propBeds" placeholder="Beds" class="p-2 border rounded-md" required>
+                        <input type="number" id="propBaths" placeholder="Baths" class="p-2 border rounded-md" required>
+                        <input type="text" id="propNotes" placeholder="Key Features/Notes" class="sm:col-span-2 md:col-span-3 p-2 border rounded-md">
+                        <button type="submit" class="sm:col-span-2 md:col-span-1 bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700">Add Property</button>
+                    </form>
+                </div>
+                
+                <div class="overflow-x-auto bg-white rounded-xl shadow-md">
+                    <table class="w-full text-left">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="p-4">Address</th>
+                                <th class="p-4">Price</th>
+                                <th class="p-4">Beds</th>
+                                <th class="p-4">Baths</th>
+                                <th class="p-4">Notes</th>
+                                <th class="p-4">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="propertyList">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="checklist" class="section">
+                 <div class="text-center mb-8">
+                    <h2 class="text-3xl font-semibold text-gray-800">Offer & Closing Checklist</h2>
+                    <p class="text-gray-600 mt-2">Track every step from making an offer to getting the keys. Check items off as you complete them to see your progress.</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <div class="mb-6">
+                        <h3 class="text-xl font-semibold mb-2">Overall Progress</h3>
+                        <div class="w-full bg-gray-200 rounded-full h-4">
+                            <div id="progressBarFill" class="bg-green-500 h-4 rounded-full progress-bar-fill" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div id="checklistContainer" class="space-y-6">
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const sections = document.querySelectorAll('.section');
+            const navLinks = document.querySelectorAll('.nav-link');
+
+            function updateView(targetId) {
+                sections.forEach(section => {
+                    section.classList.toggle('active', section.id === targetId);
+                });
+                navLinks.forEach(link => {
+                    link.classList.toggle('active', link.dataset.target === targetId);
+                });
+            }
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', () => updateView(link.dataset.target));
+            });
+
+            const income1El = document.getElementById('income1');
+            const income2El = document.getElementById('income2');
+            const incomeOtherEl = document.getElementById('incomeOther');
+            const expenseInputs = document.querySelectorAll('.expense-item');
+            const totalIncomeEl = document.getElementById('totalIncome');
+            const totalExpensesEl = document.getElementById('totalExpenses');
+            const netSavingsEl = document.getElementById('netSavings');
+            const budgetChartEl = document.getElementById('budgetChart');
+            
+            let budgetChart;
+            const BIWEEKLY_TO_MONTHLY_FACTOR = 2.166;
+
+            function formatCurrency(amount) {
+                return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+            }
+
+            function updateBudget() {
+                const i1 = parseFloat(income1El.value) || 0;
+                const i2 = parseFloat(income2El.value) || 0;
+                const iOther = parseFloat(incomeOtherEl.value) || 0;
+
+                const totalBiweeklyIncome = i1 + i2 + iOther;
+                const totalMonthlyIncome = totalBiweeklyIncome * BIWEEKLY_TO_MONTHLY_FACTOR;
+
+                let totalMonthlyExpenses = 0;
+                expenseInputs.forEach(input => {
+                    totalMonthlyExpenses += parseFloat(input.value) || 0;
+                });
+
+                const netMonthlySavings = totalMonthlyIncome - totalMonthlyExpenses;
+
+                totalIncomeEl.textContent = formatCurrency(totalMonthlyIncome);
+                totalExpensesEl.textContent = formatCurrency(totalMonthlyExpenses);
+                netSavingsEl.textContent = formatCurrency(netMonthlySavings);
+                
+                if (netMonthlySavings > 0) {
+                    netSavingsEl.classList.remove('text-red-600');
+                    netSavingsEl.classList.add('text-blue-600');
+                } else {
+                    netSavingsEl.classList.remove('text-blue-600');
+                    netSavingsEl.classList.add('text-red-600');
+                }
+
+                updateChart(totalMonthlyExpenses, netMonthlySavings);
+            }
+
+            function updateChart(expenses, savings) {
+                const data = {
+                    labels: ['Expenses', 'Savings'],
+                    datasets: [{
+                        data: [Math.max(0, expenses), Math.max(0, savings)],
+                        backgroundColor: ['#ef4444', '#22c55e'],
+                        borderColor: '#ffffff',
+                        borderWidth: 2,
+                    }]
+                };
+
+                if (budgetChart) {
+                    budgetChart.data = data;
+                    budgetChart.update();
+                } else {
+                    budgetChart = new Chart(budgetChartEl, {
+                        type: 'doughnut',
+                        data: data,
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            let label = context.label || '';
+                                            if (label) {
+                                                label += ': ';
+                                            }
+                                            if (context.parsed !== null) {
+                                                label += formatCurrency(context.parsed);
+                                            }
+                                            return label;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+            
+            [income1El, income2El, incomeOtherEl, ...expenseInputs].forEach(el => {
+                el.addEventListener('keyup', updateBudget);
+            });
+            
+            const addPropertyForm = document.getElementById('addPropertyForm');
+            const propertyList = document.getElementById('propertyList');
+
+            addPropertyForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const address = document.getElementById('propAddress').value;
+                const price = parseFloat(document.getElementById('propPrice').value);
+                const beds = document.getElementById('propBeds').value;
+                const baths = document.getElementById('propBaths').value;
+                const notes = document.getElementById('propNotes').value;
+                
+                const row = document.createElement('tr');
+                row.className = 'border-b';
+                row.innerHTML = `
+                    <td class="p-4">${address}</td>
+                    <td class="p-4">${formatCurrency(price)}</td>
+                    <td class="p-4">${beds}</td>
+                    <td class="p-4">${baths}</td>
+                    <td class="p-4">${notes}</td>
+                    <td class="p-4"><button class="delete-prop text-red-500 hover:text-red-700">Remove</button></td>
+                `;
+                propertyList.appendChild(row);
+                addPropertyForm.reset();
+            });
+
+            propertyList.addEventListener('click', function(e) {
+                if (e.target.classList.contains('delete-prop')) {
+                    e.target.closest('tr').remove();
+                }
+            });
+
+            const checklistData = {
+                "Pre-Offer": ["Get Pre-Approval Letter", "Find Real Estate Agent"],
+                "Offer Phase": ["Submit Offer", "Negotiate Terms", "Offer Accepted!"],
+                "Due Diligence": ["Schedule Home Inspection", "Review Inspection Report", "Negotiate Repairs/Credits", "Order Appraisal"],
+                "Loan & Underwriting": ["Submit Loan Application", "Provide Required Documents", "Loan Underwriting", "Loan Approved!"],
+                "Closing Phase": ["Review Closing Disclosure", "Schedule Final Walkthrough", "Wire Funds for Closing", "Attend Closing", "Get Keys!"]
+            };
+            
+            const checklistContainer = document.getElementById('checklistContainer');
+            const progressBarFill = document.getElementById('progressBarFill');
+            let totalItems = 0;
+            let completedItems = 0;
+
+            function renderChecklist() {
+                for(const category in checklistData) {
+                    const sectionDiv = document.createElement('div');
+                    const categoryTitle = document.createElement('h4');
+                    categoryTitle.className = "text-lg font-semibold text-gray-700 mb-3 border-b pb-2";
+                    categoryTitle.textContent = category;
+                    sectionDiv.appendChild(categoryTitle);
+
+                    const itemsList = document.createElement('div');
+                    itemsList.className = 'space-y-3';
+                    
+                    checklistData[category].forEach(itemText => {
+                        totalItems++;
+                        const label = document.createElement('label');
+                        label.className = "flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer";
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.className = 'h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 checklist-item';
+                        const span = document.createElement('span');
+                        span.className = 'ml-3 text-gray-800';
+                        span.textContent = itemText;
+                        
+                        label.appendChild(checkbox);
+                        label.appendChild(span);
+                        itemsList.appendChild(label);
+                    });
+                    
+                    sectionDiv.appendChild(itemsList);
+                    checklistContainer.appendChild(sectionDiv);
+                }
+                
+                document.querySelectorAll('.checklist-item').forEach(item => {
+                    item.addEventListener('change', updateProgress);
+                });
+            }
+            
+            function updateProgress() {
+                completedItems = document.querySelectorAll('.checklist-item:checked').length;
+                const progressPercentage = totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
+                progressBarFill.style.width = `${progressPercentage}%`;
+            }
+
+            renderChecklist();
+            updateBudget();
+        });
+    </script>
+</body>
+</html>
